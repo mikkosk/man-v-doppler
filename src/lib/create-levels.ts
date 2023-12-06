@@ -1,5 +1,4 @@
 import { createNewLevelWithSeedPoints } from "./tools"
-import { INTERVAL_MS } from "./variables"
 import fs from "fs"
 
 type LevelSeed = {
@@ -89,7 +88,7 @@ const levelSeeds: LevelSeed[] = [
 
 
 const levels = levelSeeds.map((seed) => {
-    return createNewLevelWithSeedPoints(seed.speed, seed.soundPoints, INTERVAL_MS)
+    return createNewLevelWithSeedPoints(seed.speed, seed.soundPoints, seed.maxTime)
 })
 
 // write levels to file as json

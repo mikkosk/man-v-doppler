@@ -10,39 +10,42 @@
 	import BackgroundRoad from '$lib/modules/svgs/BackgroundRoad.svelte';
 	import { calculateSimilarity } from '$lib/similarity';
 	import { generateSvg } from '$lib/svg';
-	import { createNewLevelWithSeedPoints, createTargetArrayFromSeedPoints } from '$lib/tools';
+	import { createTargetArrayFromSeedPoints } from '$lib/tools';
 	import type { GameState } from '$lib/types';
 	import { DOMAIN_MAX, INTERVAL_MS, MAX_HERZ, MIN_HERZ } from '$lib/variables';
 	import { getText, infoText } from '$lib/texts';
+	import { allLevels } from '$lib/levels';
+
+	$: innerWidth = 600;
+	$: width = Math.min(innerWidth, 600);
+
+	let margin = { top: 0, bottom: 0, left: 0, right: 0 };
+	$: height = width * 0.8;
 
 	const BACKGROUND_FOREST_HEIGHT_FACTOR = 7 / 16;
 	const BACKGROUND_ROAD_HEIGHT_FACTOR = 9 / 16;
-
-	let gameState: GameState = 'start_idle';
-	let currentLevel = 1;
+	$: FOREST_HEIGHT = height * BACKGROUND_FOREST_HEIGHT_FACTOR;
+	$: ROAD_HEIGHT = height * BACKGROUND_ROAD_HEIGHT_FACTOR;
+	$: CAR_HEIGHT = 0.0875 * height;
+	$: CAR_WIDTH = 0.2 * height;
 
 	const OBSERVER_POS = 10;
 
-	let margin = { top: 0, bottom: 0, left: 0, right: 0 };
-	let width = 800;
-	let height = 640;
-
-	let level = createNewLevelWithSeedPoints(300, 1200, 4000);
-
-	const FOREST_HEIGHT = height * BACKGROUND_FOREST_HEIGHT_FACTOR;
-	const ROAD_HEIGHT = height * BACKGROUND_ROAD_HEIGHT_FACTOR;
-
 	let similarity: number | undefined = undefined;
-
 	let countdown: number | undefined = undefined;
+
+	let gameState: GameState = 'start_idle';
+	
+	let currentLevel = 1;
+	let level = allLevels[currentLevel - 1];
+
+	
+	let currentPos = level.distanceFromMiddle;
 
 	let frequencyArray: { time: number; value: number }[] = [];
 	let targetArray = createTargetArrayFromSeedPoints(level.speed, level.seedPoints, INTERVAL_MS, level.maxTime);
 
-	let currentPos = level.distanceFromMiddle;
-
 	const getStartHerz = () => {
-		console.log("GET START HERZ")
 		return calculateNeededUnmodifiedFrequency(
 			targetArray[0]?.value || 400,
 			level.speed,
@@ -50,6 +53,7 @@
 			OBSERVER_POS
 		);
 	};
+
 	let herz = getStartHerz();
 	let interval_number = 0;
 
@@ -128,13 +132,11 @@
 			interval_number += 1;
 
 			if (interval_number * INTERVAL_MS > level.maxTime) {
-				console.log(frequencyArray);
-				console.log(targetArray);
 				oscillator.stop();
 				clearInterval(pInterval);
 				similarity = calculateSimilarity(targetArray, frequencyArray);
 				if (similarity && similarity > 0.9) {
-					gameState = 'next_level_idle';
+					gameState = currentLevel === allLevels.length ? "game_win" : 'next_level_idle';
 				} else {
 					gameState = 'end_idle';
 				}
@@ -150,28 +152,31 @@
 	};
 
 	const changeHerz = (newHerz: number) => {
-		console.log("CHANGE HERZ");
 		herz = newHerz;
 	};
 
 
 	// Set position to start, get new starting frequency, remove old frequency array
 	const changeLevel = () => {
+		if(currentLevel > allLevels.length) {
+			gameState = 'game_win';
+			return;
+		}
+		const newLevel = allLevels[currentLevel - 1];
+		level = newLevel;
 		currentPos = level.distanceFromMiddle; 
+		targetArray = createTargetArrayFromSeedPoints(level.speed, level.seedPoints, INTERVAL_MS, level.maxTime);
 		changeHerz(getStartHerz());
 		frequencyArray = [];
-		console.log('NEW LEVEL HERE');
 	};
 
 
-	const startNewLevel = (level: number) => {
-		currentLevel = level;
+	const startNewLevel = (levelNumber: number) => {
+		currentLevel = levelNumber;
 		changeLevel();
 		playTarget();
 	};
 
-	$: svg = generateSvg(frequencyArray, level.maxTime, width, ROAD_HEIGHT, margin);
-	$: targetSvg = generateSvg(targetArray, level.maxTime, width, ROAD_HEIGHT, margin);
 
 	const updateObservedHerz = (currentHerz: number, position: number) => {
 		const observedHerz = calculateDopplerObservedFrequency(
@@ -186,23 +191,21 @@
 	$: {
 		updateObservedHerz(herz, currentPos);
 	}
-
-	const CAR_HEIGHT = 70;
-	const CAR_WIDTH = 160;
-
 	$: adjustedHerz = calculateDopplerObservedFrequency(herz, level.speed, currentPos, OBSERVER_POS);
+
+	$: svg = generateSvg(frequencyArray, level.maxTime, width, ROAD_HEIGHT, margin);
+	$: targetSvg = generateSvg(targetArray, level.maxTime, width, ROAD_HEIGHT, margin);
 	$: svgCarPosX =
 		((interval_number * INTERVAL_MS) / level.maxTime) * (width - margin.left - margin.right) +
 		margin.left;
 	$: svgCarPosY = height - (adjustedHerz / DOMAIN_MAX) * ROAD_HEIGHT - CAR_HEIGHT / 2;
 
 	$: RESULT_SHOWING = ['next_level_idle', 'end_idle'].includes(gameState);
-
 	$: changingText = getText(gameState, countdown || 0, similarity || 0);
-
-	$: console.log("HERZ", herz);
 </script>
 
+<svelte:window bind:innerWidth />
+<div class="page_container">
 <div class="main_container">
 	<div class="controls">
 		
@@ -238,7 +241,7 @@
 		</div>
 		{/if}
 	</div>
-	<div>
+	<div style="display: flex">
 		<svg {height} {width}>
 			<BackgroundForest posX={0} posY={0} {width} height={FOREST_HEIGHT} />
 			<BackgroundRoad
@@ -272,6 +275,7 @@
 			</svg>
 		</svg>
 	</div>
+</div>
 </div>
 
 <style>
@@ -315,13 +319,22 @@
 		width: 100%;
 		box-sizing: border-box;
 	}
+
+	.page_container {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		height: 100vh;
+	}
+
 	.main_container {
 		display: flex;
 		flex-direction: column;
 		align-items: center;
 		justify-content: center;
 		background-color: skyblue;
-		max-width: 800px;
+		max-width: 600px;
 	}
 
 	.herz_input {

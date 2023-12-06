@@ -1,25 +1,13 @@
+import { MAX_HERZ, MIN_HERZ } from "./variables";
+
 const getDistanceFromMiddle = (speedKmh: number, MAX_TIME: number) => {
     const speedMps = speedKmh / 3.6;
     const distanceFromMiddle = speedMps * MAX_TIME / 1000 / 2;
     return distanceFromMiddle;
 }
 
-export const createNewLevel = (speedKmh: number, INTERVAL_MS: number, MAX_TIME: number) => {
-
-    const speedMps = speedKmh / 3.6;
-
-    const distanceFromMiddle = speedMps * MAX_TIME / 1000 / 2;
-
-    const targetArray = [];
-    const step = INTERVAL_MS;
-    let randomValue = Math.random() * 800 + 100;
-    for (let i = 0; i <= MAX_TIME; i += step) {
-        targetArray.push({ time: i, value: randomValue });
-        const randomChange = Math.random() * 100 - 50;
-        randomValue = Math.max(100, Math.min(900, randomValue + randomChange));
-    }
-
-    return { targetArray, distanceFromMiddle, maxTime: MAX_TIME };
+const getRandomHerz = () => {
+    return Math.max(MIN_HERZ, MAX_HERZ * Math.random());
 }
 
 type SeedPoint = {
@@ -75,16 +63,9 @@ export const getLinearPoints = (points: SeedPoint[], endHerz: number, MAX_TIME: 
 
 }
 
-const getSemiRandomPointTime = (numberOfPoints: number, index: number, MAX_TIME: number) => {
-    if(index === 0) {
-        return 0;
-    }
+const getSemiRandomPointTime = (numberOfRandomPoints: number, index: number, MAX_TIME: number) => {
 
-    if(index === numberOfPoints - 1) {
-        return 1;
-    }
-
-    const equalPortionOfTime = MAX_TIME / (numberOfPoints - 2); // -2 because the first and last point are already set, so there is n-2 regions to place the points in
+    const equalPortionOfTime = MAX_TIME / (numberOfRandomPoints);
 
     const timeStart = equalPortionOfTime * index; 
     const timeEnd = equalPortionOfTime * (index + 1);
@@ -96,23 +77,27 @@ const getSemiRandomPointTime = (numberOfPoints: number, index: number, MAX_TIME:
     
 }
 
+
+
 export const createNewLevelWithSeedPoints = (speedKmh: number, numberOfSeeds: number, MAX_TIME: number) => {
     const startPoint: SeedPoint = {
-        herz: Math.random() * 800 + 100,
+        herz: getRandomHerz(),
         startTime: 0,
     };
 
     const endPoint: SeedPoint = {
-        herz: Math.random() * 800 + 100,
+        herz: getRandomHerz(),
         startTime: 1,
     };
 
     const numberOfRandomPoints = numberOfSeeds - 2;
 
     const randomPoints: SeedPoint[] = new Array(numberOfRandomPoints).fill(0).reduce((acc) => {
+        const randomPointIndex = acc.length - 1; // since the first point is the start point, and not a random point
+        const randomValue = getRandomHerz();
         const nextPoint: SeedPoint = {
-            herz: Math.random() * 800 + 100,
-            startTime: getSemiRandomPointTime(numberOfRandomPoints, acc.length, MAX_TIME)
+            herz: randomValue,
+            startTime: getSemiRandomPointTime(numberOfRandomPoints, randomPointIndex, MAX_TIME)
         };
         return [...acc, nextPoint];
     }, [startPoint]);

@@ -1,6 +1,7 @@
 import { line, scaleLinear, curveLinear} from 'd3';
+import { DOMAIN_MAX, DOMAIN_MIN } from './variables';
 
-const Y_DOMAIN = [0, 1000];
+const Y_DOMAIN = [DOMAIN_MIN, DOMAIN_MAX];
 
 export const generateSvg = (frequencyArrayFull: {time: number, value: number}[], MAX_TIME: number, width: number, height: number,margin: {bottom: number, top: number, left: number, right: number}) => {
 		const xScale = scaleLinear()

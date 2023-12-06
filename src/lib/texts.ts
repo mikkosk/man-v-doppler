@@ -16,7 +16,7 @@ export const getText = (gameState: GameState, countdown: number, similarity: num
         case "end_idle":
             return `Not quite good enough.\nGot ${Math.floor(similarity * 100).toFixed(0)}% similarity. Needed 95%.\nTry again?`;
         case "game_win":
-            return `You truly beat the Doppler! `;
+            return `You truly beat the Doppler!`;
     }
 }
 

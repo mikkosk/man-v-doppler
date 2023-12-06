@@ -20,11 +20,17 @@
                     nextLevel: currentLevel + 1
                 }
             case "game_win":
-            case "end_idle":
-                return {
+            return {
                     text: "Play Again",
                     disabled: false,
                     nextLevel: 1
+                
+                }
+            case "end_idle":
+                return {
+                    text: "Try Again",
+                    disabled: false,
+                    nextLevel: currentLevel
                 
                 }
             case "listen":
