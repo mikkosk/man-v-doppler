@@ -1,3 +1,5 @@
+# Man V Doppler
+
 A simulation / game for how playing an instrument in a moving vehicle sounds like for a listener standing further away.
 
 TypeScript + Svelte. Node 18.
@@ -5,7 +7,7 @@ TypeScript + Svelte. Node 18.
 Run with `npm run dev``
 
 --SVELTE BOILERPLATE--
-# create-svelte
+## create-svelte
 
 Everything you need to build a Svelte project, powered by [`create-svelte`](https://github.com/sveltejs/kit/tree/master/packages/create-svelte).
 
